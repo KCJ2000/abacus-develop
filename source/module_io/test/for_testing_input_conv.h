@@ -23,6 +23,7 @@
 #include "module_hsolver/hsolver_lcao.h"
 #include "module_elecstate/elecstate_lcao.h"
 #include "module_io/berryphase.h"
+#include "module_md/MD_func.h"
 
 bool berryphase::berry_phase_flag=false;
 int elecstate::ElecStateLCAO::out_wfc_lcao = 0;
@@ -111,7 +112,6 @@ UnitCell::UnitCell(){
 	
 	itia2iat.create(1, 1);
 	lc = new int[3];
-	itiaiw2iwt.create(1, 1, 1);
 	
 	latvec = ModuleBase::Matrix3();
 	latvec_supercell = ModuleBase::Matrix3();
@@ -242,6 +242,11 @@ void UnitCell::setup(const std::string &latname_in,
 	return;
 }
 void Structure_Factor::set(const int&){return;}
+
+namespace MD_func
+{
+    double current_step(const int& my_rank, const std::string& file_dir){return 0;}
+}
 
 namespace GlobalC
 {

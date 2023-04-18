@@ -27,6 +27,7 @@
 #include "module_elecstate/potentials/gatefield.h"
 #include "module_hsolver/hsolver_lcao.h"
 #include "module_psi/kernels/device.h"
+#include "module_md/MD_func.h"
 
 template <typename T> void Input_Conv::parse_expression(const std::string &fn, std::vector<T> &vec)
 {
@@ -98,12 +99,30 @@ void Input_Conv::Convert(void)
 {
     ModuleBase::TITLE("Input_Conv", "Convert");
     ModuleBase::timer::tick("Input_Conv", "Convert");
+    //-----------------------------------------------
+    // set read_file_dir
+    //-----------------------------------------------
+    if (INPUT.read_file_dir == "auto")
+    {
+        GlobalV::global_readin_dir = GlobalV::global_out_dir;
+    }
+    else
+    {
+        GlobalV::global_readin_dir = INPUT.read_file_dir + '/';
+    }
     //----------------------------------------------------------
     // main parameters / electrons / spin ( 10/16 )
     //----------------------------------------------------------
     //  suffix
-    if (INPUT.stru_file != "")
+    if (INPUT.calculation == "md" && INPUT.mdp.md_restart) // md restart  liuyu add 2023-04-12
+    {
+        int istep = MD_func::current_step(GlobalV::MY_RANK, GlobalV::global_readin_dir);
+        GlobalV::stru_file = INPUT.stru_file = GlobalV::global_stru_dir + "STRU_MD_" + std::to_string(istep);
+    }
+    else if (INPUT.stru_file != "")
+    {
         GlobalV::stru_file = INPUT.stru_file;
+    }
     GlobalV::global_wannier_card = INPUT.wannier_card;
     if (INPUT.kpoint_file != "")
         GlobalV::global_kpoint_card = INPUT.kpoint_file;
@@ -264,11 +283,6 @@ void Input_Conv::Convert(void)
         }
     }
 #endif
-    /*
-#ifndef __CMD
-    GlobalC::ucell.n_mag_at=INPUT.n_mag_at;
-    GlobalC::ucell.atom_mag=INPUT.atom_mag;
-#endif*/
     //--------------------------------------------
     // added by zhengdy-soc
     //--------------------------------------------
@@ -367,9 +381,7 @@ void Input_Conv::Convert(void)
     if (INPUT.restart_save)
     {
         GlobalC::restart.folder = GlobalV::global_readin_dir + "restart/";
-        const std::string command0 = "test -d " + GlobalC::restart.folder + " || mkdir " + GlobalC::restart.folder;
-        if (GlobalV::MY_RANK == 0)
-            system(command0.c_str());
+        ModuleBase::GlobalFunc::MAKE_DIR(GlobalC::restart.folder);
         if (INPUT.dft_functional == "hf" || INPUT.dft_functional == "pbe0" || INPUT.dft_functional == "hse"
             || INPUT.dft_functional == "opt_orb" || INPUT.dft_functional == "scan0")
         {
@@ -450,7 +462,8 @@ void Input_Conv::Convert(void)
         GlobalC::exx_info.info_ri.cauchy_threshold = INPUT.exx_cauchy_threshold;
         GlobalC::exx_info.info_ri.C_grad_threshold = INPUT.exx_c_grad_threshold;
         GlobalC::exx_info.info_ri.V_grad_threshold = INPUT.exx_v_grad_threshold;
-        GlobalC::exx_info.info_ri.cauchy_grad_threshold = INPUT.exx_cauchy_grad_threshold;
+        GlobalC::exx_info.info_ri.cauchy_force_threshold = INPUT.exx_cauchy_force_threshold;
+        GlobalC::exx_info.info_ri.cauchy_stress_threshold = INPUT.exx_cauchy_stress_threshold;
         GlobalC::exx_info.info_ri.ccp_threshold = INPUT.exx_ccp_threshold;
         GlobalC::exx_info.info_ri.ccp_rmesh_times = std::stod(INPUT.exx_ccp_rmesh_times);
 
@@ -500,6 +513,7 @@ void Input_Conv::Convert(void)
     GlobalV::SCF_NMAX = INPUT.scf_nmax;
     GlobalV::RELAX_NMAX = INPUT.relax_nmax;
     GlobalV::MD_NSTEP = INPUT.mdp.md_nstep;
+    GlobalV::md_prec_level = INPUT.mdp.md_prec_level;
 
     //----------------------------------------------------------
     // wavefunction / charge / potential / (2/4)
@@ -610,17 +624,6 @@ void Input_Conv::Convert(void)
     GlobalV::of_full_pw_dim = INPUT.of_full_pw_dim;
     GlobalV::of_read_kernel = INPUT.of_read_kernel;
     GlobalV::of_kernel_file = INPUT.of_kernel_file;
-    //-----------------------------------------------
-    // set read_file_dir
-    //-----------------------------------------------
-    if (INPUT.read_file_dir == "auto")
-    {
-        GlobalV::global_readin_dir = GlobalV::global_out_dir;
-    }
-    else
-    {
-        GlobalV::global_readin_dir = INPUT.read_file_dir + '/';
-    }
 
     ModuleBase::timer::tick("Input_Conv", "Convert");
     return;

@@ -59,6 +59,7 @@ void MDrun::setup(ModuleESolver::ESolver *p_esolver)
     MD_func::force_virial(p_esolver, step_, ucell, potential, force, virial);
     MD_func::compute_stress(ucell, vel, allmass, virial, stress);
     t_current = MD_func::current_temp(kinetic, ucell.nat, frozen_freedom_, allmass, vel);
+    ucell.ionic_position_updated = true;
 }
 
 void MDrun::first_half()
@@ -204,36 +205,5 @@ void MDrun::write_restart()
 
 void MDrun::restart()
 {
-    bool ok = true;
-
-    if(!GlobalV::MY_RANK)
-    {
-        std::stringstream ssc;
-        ssc << GlobalV::global_readin_dir << "Restart_md.dat";
-        std::ifstream file(ssc.str().c_str());
-
-        if(!file)
-        {
-            ok = false;
-        }
-
-        if(ok)
-        {
-            file >> step_rst_;
-            file.close();
-        }
-    }
-
-#ifdef __MPI
-    MPI_Bcast(&ok, 1, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
-
-    if(!ok)
-    {
-        ModuleBase::WARNING_QUIT("mdrun", "no Restart_md.dat !");
-    }
-
-#ifdef __MPI
-    MPI_Bcast(&step_rst_, 1, MPI_INT, 0, MPI_COMM_WORLD);
-#endif
+    step_rst_ = MD_func::current_step(GlobalV::MY_RANK, GlobalV::global_readin_dir);
 }

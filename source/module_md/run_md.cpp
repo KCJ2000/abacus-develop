@@ -6,8 +6,8 @@
 #include "Nose_Hoover.h"
 #include "Langevin.h"
 #include "module_io/input.h"
-#include "../module_io/print_info.h"
-#include "../module_base/timer.h"
+#include "module_io/print_info.h"
+#include "module_base/timer.h"
 
 Run_MD::Run_MD(){}
 
@@ -20,25 +20,29 @@ void Run_MD::md_line(UnitCell &unit_in, ModuleESolver::ESolver *p_esolver)
 
     // determine the md_type
     MDrun *mdrun;
-    if(INPUT.mdp.md_type == -1)
+    if(INPUT.mdp.md_type == "fire")
     {
         mdrun = new FIRE(INPUT.mdp, unit_in); 
     }
-    else if(INPUT.mdp.md_type == 0)
-    {
-        mdrun = new Verlet(INPUT.mdp, unit_in); 
-    }
-    else if(INPUT.mdp.md_type == 1)
+    else if((INPUT.mdp.md_type == "nvt" && INPUT.mdp.md_thermostat == "nhc") || INPUT.mdp.md_type == "npt")
     {
         mdrun = new Nose_Hoover(INPUT.mdp, unit_in);
     }
-    else if(INPUT.mdp.md_type == 2)
+    else if(INPUT.mdp.md_type == "nve" || INPUT.mdp.md_type == "nvt")
+    {
+        mdrun = new Verlet(INPUT.mdp, unit_in); 
+    }
+    else if(INPUT.mdp.md_type == "langevin")
     {
         mdrun = new Langevin(INPUT.mdp, unit_in);
     }
-    else if(INPUT.mdp.md_type == 4)
+    else if(INPUT.mdp.md_type == "msst")
     {
         mdrun = new MSST(INPUT.mdp, unit_in);
+    }
+    else
+    {
+        ModuleBase::WARNING_QUIT("md_line", "no such md_type!");
     }
 
     // md cycle
