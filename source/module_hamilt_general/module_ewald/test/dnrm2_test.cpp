@@ -9,9 +9,10 @@
 
 /**
  * @brief Construct a new TEST object
- * int n is the maximum of the index
- * int incx is the interval of two index
- * the input is an double array type instead of std::vector type
+ * -Tested fuction:double dnrm2(const int n, const double *x, const int incx) ;
+ *      -int n is the maximum of the index
+ *      -int incx is the interval of two index
+ *      -the input is an double array type instead of std::vector type
  * The result is L2 norm
  */
 

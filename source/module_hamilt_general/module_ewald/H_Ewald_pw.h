@@ -12,13 +12,20 @@ class H_Ewald_pw
 {
 	public:
 
-	// need to be updated in near future 2021-02-25
+	// the calculation of ewald force is essential to Stress_Func and Forces
+    // And the processes are the same
+    // So here use friend class to give Stress_Function and Forces the power to get ewald force in this class.
+    // But such strategy is not flexible because of the use of the static varible and funcitons.
+    // The static varible does not belong to any object.In a calculation,the ewld is unique.
+    // When ABACUS wants to deal with several systems at a time, this class will be a barrier.
+    // kongfanhan - 23.4.17
     friend class Stress_Func<double, psi::DEVICE_CPU>; // Ewald stress
     friend class Stress_Func<double, psi::DEVICE_GPU>; // Ewald stress
     friend class Forces<double, psi::DEVICE_CPU>; // Ewald forces
     friend class Forces<double, psi::DEVICE_GPU>; // Ewald forces
 	friend class Force_LCAO; // Ewald forces
 
+    // stardard part , in this class ,these two functions have no contains.
     H_Ewald_pw();
     ~H_Ewald_pw();
 

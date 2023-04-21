@@ -1,0 +1,3 @@
+AddTest(
+    TARGET 
+)
